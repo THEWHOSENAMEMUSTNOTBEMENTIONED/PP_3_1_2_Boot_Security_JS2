@@ -7,12 +7,9 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 
 @Configuration
 @EnableWebSecurity
@@ -29,10 +26,11 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.authorizeRequests()
-                .antMatchers("/favicon.ico", "/", "/login").permitAll() // Доступно всем
-                .antMatchers("/admin/**").hasRole("ADMIN")  // Только для ADMIN - все пути /admin/**
-                .antMatchers("/user").hasAnyRole("USER", "ADMIN")  // Для USER и ADMIN
-                .anyRequest().authenticated() // Все остальное требует аутентификации
+                .antMatchers("/favicon.ico", "/", "/login").permitAll() // Доступно всем (без изменений)
+                .antMatchers("/admin/**").hasRole("ADMIN") // Только для ROLE_ADMIN (без изменений)
+                // Изменение: /user только для ROLE_USER
+                .antMatchers("/user").hasRole("USER") // Теперь только ROLE_USER, без ROLE_ADMIN
+                .anyRequest().authenticated() // Все остальное требует аутентификации (без изменений)
                 .and()
                 .formLogin()
                 .successHandler(successUserHandler)

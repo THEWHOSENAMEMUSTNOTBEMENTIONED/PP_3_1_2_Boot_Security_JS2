@@ -15,6 +15,11 @@
         <span th:each="role : ${user.roles}" th:text="${role.roleName} + ' '"></span>
     </p>
 </div>
+<!-- Добавлено: Ссылки для администраторов, отображаются только если isAdmin = true -->
+<div th:if="${isAdmin}">
+    <a th:href="@{/admin/all-users}">View All Users</a><br/>
+    <a th:href="@{/admin/user-create}">Create New User</a><br/>
+</div>
 <a th:href="@{/logout}">Logout</a>
 </body>
 </html>
