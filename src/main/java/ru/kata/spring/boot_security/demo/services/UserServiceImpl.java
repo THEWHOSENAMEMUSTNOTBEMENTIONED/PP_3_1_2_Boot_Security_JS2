@@ -1,20 +1,21 @@
-package ru.kata.spring.boot_security.demo.Services;
+package ru.kata.spring.boot_security.demo.services;
 
 import org.springframework.stereotype.Service;
-import ru.kata.spring.boot_security.demo.Repositories.RoleRepository;
-import ru.kata.spring.boot_security.demo.Repositories.UserRepository;
+import org.springframework.transaction.annotation.Transactional;
+import ru.kata.spring.boot_security.demo.repositories.RoleRepository;
+import ru.kata.spring.boot_security.demo.repositories.UserRepository;
 import ru.kata.spring.boot_security.demo.models.Role;
 import ru.kata.spring.boot_security.demo.models.User;
 
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 @Service
+@Transactional(readOnly = true)
 public class UserServiceImpl implements UserService {
 
-    UserRepository userRepository;
-    RoleRepository roleRepository;
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
 
     public UserServiceImpl(UserRepository userRepository, RoleRepository roleRepository) {
         this.userRepository = userRepository;
@@ -32,18 +33,24 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public void saveUser(User user) {
         userRepository.save(user);
     }
 
     @Override
+    @Transactional
     public void deleteById(int id) {
         userRepository.deleteById(id);
     }
 
     @Override
-    public Set<Role> getAllRoles() {
-        return new HashSet<>(roleRepository.findAll());
+    public List<Role> getAllRoles() {
+        List<Role> roles = roleRepository.findAll();
+        if (roles == null) {
+            return new ArrayList<>();
+        }
+        return roles;
     }
 
     @Override

@@ -1,32 +1,140 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
-    <title>Create User</title>
+    <title>Создать пользователя</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/css/bootstrap.min.css" integrity="sha384-zCbKRCUGaJDkqS1kPbPd7TveP5iyJE0EjAuZQTgFLD2ylzuqKfdKlfG/eSrtxUkn" crossorigin="anonymous">
+    <style>
+        body {
+            padding-top: 50px; /* Отступ сверху для верхней панели */
+        }
+        .navbar-top {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1030;
+            background-color: #343a40;
+            color: white;
+            padding: 10px 20px;
+        }
+        .sidebar {
+            position: fixed;
+            top: 50px; /* Учитываем высоту верхней панели */
+            bottom: 0;
+            left: 0;
+            z-index: 100;
+            width: 150px; /* Устанавливаем фиксированную ширину */
+            background-color: #f8f9fa;
+            box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+            padding: 20px 0;
+        }
+        .sidebar-sticky {
+            position: relative;
+            top: 0;
+            height: calc(100vh - 50px); /* Учитываем высоту верхней панели */
+            padding-top: 20px;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+        .sidebar .nav-link {
+            font-weight: 500;
+            color: #333;
+        }
+        .sidebar .nav-link.active {
+            color: #007bff;
+        }
+        .main-content {
+            margin-left: 150px; /* Отступ соответствует ширине боковой панели */
+            padding: 20px;
+        }
+        .form-container {
+            max-width: 600px; /* Ограничиваем ширину формы */
+            margin: 0 auto; /* Центрируем форму */
+        }
+        .logout {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+        }
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: static;
+                width: 100%;
+                height: auto;
+            }
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
 </head>
 <body>
-<h2>Create User</h2>
-<form th:action="@{/admin/user-create}" th:object="${user}" method="post">
-    <label for="username">Username:</label>
-    <input type="text" th:field="*{username}" id="username" name="username" /><br/>
+<!-- Верхняя панель -->
+<div class="navbar-top">
+        <span sec:authorize="isAuthenticated()">
+            <span sec:authentication="name"></span> с ролями: <span sec:authentication="authorities"></span>
+        </span>
+    <span sec:authorize="!isAuthenticated()">Гость</span>
+    <a th:href="@{/logout}" class="logout text-white" sec:authorize="isAuthenticated()">Выход</a>
+</div>
 
-    <label for="surname">Surname:</label>
-    <input type="text" th:field="*{surname}" id="surname" name="surname" /><br/>
+<!-- Боковое меню -->
+<nav class="sidebar">
+    <div class="sidebar-sticky">
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link" href="#">Админ</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" th:href="@{/admin/all-users}">Таблица пользователей</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" th:href="@{/admin/user-create}">Новый пользователь</a>
+            </li>
+        </ul>
+    </div>
+</nav>
 
-    <label for="department">Department:</label>
-    <input type="text" th:field="*{department}" id="department" name="department" /><br/>
+<!-- Основное содержимое -->
+<main class="main-content">
+    <h2>Панель администратора</h2>
+    <h3>Добавить нового пользователя</h3>
+    <div class="form-container">
+        <form th:action="@{/admin/user-create}" th:object="${user}" method="post">
+            <div class="form-group">
+                <label for="username">Имя пользователя</label>
+                <input type="text" class="form-control" th:field="*{username}" id="username" name="username" required>
+            </div>
+            <div class="form-group">
+                <label for="surname">Фамилия</label>
+                <input type="text" class="form-control" th:field="*{surname}" id="surname" name="surname" required>
+            </div>
+            <div class="form-group">
+                <label for="department">Отдел</label>
+                <input type="text" class="form-control" th:field="*{department}" id="department" name="department" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" class="form-control" th:field="*{email}" id="email" name="email" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Пароль</label>
+                <input type="password" class="form-control" th:field="*{password}" id="password" name="password" required>
+            </div>
+            <div class="form-group">
+                <label for="selectedRoles">Роли</label>
+                <select class="form-control" id="selectedRoles" name="selectedRoles" multiple>
+                    <option th:if="${allRoles != null}" th:each="role : ${allRoles}" th:value="${role.roleName}" th:text="${role.roleName}"></option>
+                    <option th:if="${allRoles == null}" disabled>Роли не найдены</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-success">Добавить нового пользователя</button>
+        </form>
+    </div>
+</main>
 
-    <label for="email">Email:</label>
-    <input type="text" th:field="*{email}" id="email" name="email" /><br/>
-
-    <label for="password">Password:</label>
-    <input type="password" th:field="*{password}" id="password" name="password" /><br/>
-
-    <label>Roles:</label>
-    <select multiple name="selectedRoles">
-        <option th:each="role : ${allRoles}" th:value="${role.roleName}" th:text="${role.roleName}"></option>
-    </select><br/>
-
-    <button type="submit">Save</button>
-</form>
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

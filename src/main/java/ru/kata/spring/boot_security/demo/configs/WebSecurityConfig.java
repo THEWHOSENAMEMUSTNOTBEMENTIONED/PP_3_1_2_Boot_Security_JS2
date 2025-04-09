@@ -26,11 +26,10 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.authorizeRequests()
-                .antMatchers("/favicon.ico", "/", "/login").permitAll() // Доступно всем (без изменений)
-                .antMatchers("/admin/**").hasRole("ADMIN") // Только для ROLE_ADMIN (без изменений)
-                // Изменение: /user только для ROLE_USER
-                .antMatchers("/user").hasRole("USER") // Теперь только ROLE_USER, без ROLE_ADMIN
-                .anyRequest().authenticated() // Все остальное требует аутентификации (без изменений)
+                .antMatchers("/favicon.ico", "/", "/login").permitAll() // Доступно всем
+                .antMatchers("/admin/**").hasRole("ADMIN") // Только для ROLE_ADMIN
+                .antMatchers("/user").hasAnyRole("USER", "ADMIN") // Для USER и ADMIN
+                .anyRequest().authenticated() // Все остальное требует аутентификации
                 .and()
                 .formLogin()
                 .successHandler(successUserHandler)
@@ -42,7 +41,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .logoutSuccessUrl("/login")
                 .permitAll()
                 .and()
-                .csrf().disable();
+                .csrf().disable(); // Отключаем CSRF для простоты
     }
 
     @Override
@@ -52,6 +51,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return NoOpPasswordEncoder.getInstance();
+        return NoOpPasswordEncoder.getInstance(); // Пароли без шифрования
     }
 }
