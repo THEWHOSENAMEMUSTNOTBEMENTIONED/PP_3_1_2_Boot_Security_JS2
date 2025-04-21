@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Админ-панель</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/css/bootstrap.min.css">
+  <style>
+    body { padding-top: 50px; }
+    .navbar-top {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 1030;
+      background-color: #343a40; color: white; padding: 10px 20px;
+    }
+    .sidebar {
+      position: fixed; top: 50px; bottom: 0; left: 0; z-index: 100;
+      width: 200px; background-color: #f8f9fa; box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+    }
+    .sidebar-sticky {
+      position: relative; top: 0; height: calc(100vh - 50px);
+      padding-top: 20px; overflow-x: hidden; overflow-y: auto;
+    }
+    .sidebar .nav-link { font-weight: 500; color: #333; }
+    .sidebar .nav-link.active { color: #007bff; }
+    .main-content { margin-left: 200px; padding: 20px; }
+    .logout { position: absolute; top: 10px; right: 20px; }
+  </style>
+</head>
+<body>
+<!-- Верхняя панель -->
+<div class="navbar-top">
+  <span id="auth-info">Гость</span>
+  <a href="/logout" class="logout text-white" id="logout-link" style="display: none;">Выход</a>
+</div>
+
+<!-- Боковое меню -->
+<nav class="sidebar">
+  <div class="sidebar-sticky">
+    <ul class="nav flex-column">
+      <li class="nav-item">
+        <a class="nav-link active" href="#">Админ</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#" id="all-users-link">Таблица пользователей</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#" id="create-user-link">Новый пользователь</a>
+      </li>
+    </ul>
+  </div>
+</nav>
+
+<!-- Основное содержимое -->
+<main class="main-content" id="main-content">
+  <h2>Панель администратора</h2>
+  <div id="content-area"></div>
+</main>
+
+<!-- Модальное окно для редактирования -->
+<div class="modal fade" id="editModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Редактировать пользователя</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="edit-user-form">
+          <input type="hidden" id="edit-id">
+          <div class="form-group">
+            <label>ID</label>
+            <input type="text" class="form-control" id="edit-id-display" readonly>
+          </div>
+          <div class="form-group">
+            <label>Имя пользователя</label>
+            <input type="text" class="form-control" id="edit-username" required>
+          </div>
+          <div class="form-group">
+            <label>Фамилия</label>
+            <input type="text" class="form-control" id="edit-surname" required>
+          </div>
+          <div class="form-group">
+            <label>Отдел</label>
+            <input type="text" class="form-control" id="edit-department" required>
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" class="form-control" id="edit-email" required>
+          </div>
+          <div class="form-group">
+            <label>Пароль (оставьте пустым, чтобы не менять)</label>
+            <input type="password" class="form-control" id="edit-password">
+          </div>
+          <div class="form-group">
+            <label>Роли</label>
+            <select class="form-control" id="edit-roles" multiple></select>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
+            <button type="submit" class="btn btn-primary">Редактировать</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно для удаления -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Подтверждение удаления</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>Вы уверены, что хотите удалить пользователя?</p>
+        <p>Имя: <span id="delete-username"></span></p>
+        <p>Фамилия: <span id="delete-surname"></span></p>
+        <p>Email: <span id="delete-email"></span></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+        <button type="button" class="btn btn-danger" id="confirm-delete">Удалить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно для создания -->
+<div class="modal fade" id="createModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Создать пользователя</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="create-user-form">
+          <div class="form-group">
+            <label>Имя пользователя</label>
+            <input type="text" class="form-control" id="create-username" required>
+          </div>
+          <div class="form-group">
+            <label>Фамилия</label>
+            <input type="text" class="form-control" id="create-surname" required>
+          </div>
+          <div class="form-group">
+            <label>Отдел</label>
+            <input type="text" class="form CLEAR control" id="create-department" required>
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" class="form-control" id="create-email" required>
+          </div>
+          <div class="form-group">
+            <label>Пароль</label>
+            <input type="password" class="form-control" id="create-password" required>
+          </div>
+          <div class="form-group">
+            <label>Роли</label>
+            <select class="form-control" id="create-roles" multiple></select>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
+            <button type="submit" class="btn btn-primary">Создать</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  $(document).ready(function () {
+    let allRoles = [];
+    let currentUser = null;
+
+    // Загрузка текущего пользователя
+    fetch('/user')
+            .then(response => response.json())
+            .then(user => {
+              currentUser = user;
+              $('#auth-info').text(`${user.username} с ролями: ${user.roles.map(r => r.roleName).join(', ')}`);
+              $('#logout-link').show();
+              if (user.roles.some(r => r.roleName === 'ROLE_ADMIN')) {
+                loadUsers();
+              } else {
+                showUserPage();
+              }
+            })
+            .catch(() => $('#content-area').html('<h3>Пожалуйста, войдите</h3>'));
+
+    // Загрузка ролей
+    fetch('/admin/roles')
+            .then(response => response.json())
+            .then(roles => {
+              allRoles = roles;
+            })
+            .catch(error => console.error('Error loading roles:', error));
+
+    // Загрузка списка пользователей
+    function loadUsers() {
+      fetch('/admin/all-users')
+              .then(response => response.json())
+              .then(users => {
+                const content = `
+                        <h3>Все пользователи</h3>
+                        <table class="table table-striped" id="users-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Имя пользователя</th>
+                                    <th>Фамилия</th>
+                                    <th>Отдел</th>
+                                    <th>Email</th>
+                                    <th>Роли</th>
+                                    <th>Редактировать</th>
+                                    <th>Удалить</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-tbody">
+                                ${users.map(user => `
+                                    <tr>
+                                        <td>${user.id}</td>
+                                        <td>${user.username}</td>
+                                        <td>${user.surname}</td>
+                                        <td>${user.department}</td>
+                                        <td>${user.email}</td>
+                                        <td>${user.roles.map(role => role.roleName).join(', ')}</td>
+                                        <td><button class="btn btn-info edit-btn" data-id="${user.id}">Редактировать</button></td>
+                                        <td><button class="btn btn-danger delete-btn" data-id="${user.id}">Удалить</button></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>`;
+                $('#content-area').html(content);
+              })
+              .catch(error => console.error('Error loading users:', error));
+    }
+
+    // Страница пользователя
+    function showUserPage() {
+      const content = `
+                <h3>Данные пользователя</h3>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Имя пользователя</th>
+                            <th>Фамилия</th>
+                            <th>Отдел</th>
+                            <th>Email</th>
+                            <th>Роли</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>${currentUser.id}</td>
+                            <td>${currentUser.username}</td>
+                            <td>${currentUser.surname}</td>
+                            <td>${currentUser.department}</td>
+                            <td>${currentUser.email}</td>
+                            <td>${currentUser.roles.map(role => role.roleName).join(', ')}</td>
+                        </tr>
+                    </tbody>
+                </table>`;
+      $('#content-area').html(content);
+    }
+
+    // Обработка нажатия на "Таблица пользователей"
+    $('#all-users-link').click(function (e) {
+      e.preventDefault();
+      loadUsers();
+    });
+
+    // Обработка нажатия на "Новый пользователь"
+    $('#create-user-link').click(function (e) {
+      e.preventDefault();
+      $('#create-username').val('');
+      $('#create-surname').val('');
+      $('#create-department').val('');
+      $('#create-email').val('');
+      $('#create-password').val('');
+      const rolesSelect = $('#create-roles');
+      rolesSelect.empty();
+      allRoles.forEach(role => {
+        rolesSelect.append(`<option value="${role.id}">${role.roleName}</option>`);
+      });
+      $('#createModal').modal('show');
+    });
+
+    // Обработка создания пользователя
+    $('#create-user-form').submit(function (e) {
+      e.preventDefault();
+      const userData = {
+        username: $('#create-username').val(),
+        surname: $('#create-surname').val(),
+        department: $('#create-department').val(),
+        email: $('#create-email').val(),
+        password: $('#create-password').val(),
+        roleIds: $('#create-roles').val().map(Number)
+      };
+      fetch('/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userData)
+      })
+              .then(response => {
+                if (response.ok) {
+                  $('#createModal').modal('hide');
+                  loadUsers();
+                } else {
+                  alert('Ошибка при создании пользователя');
+                }
+              })
+              .catch(error => console.error('Error creating user:', error));
+    });
+
+    // Обработка нажатия на "Редактировать"
+    $(document).on('click', '.edit-btn', function () {
+      const userId = $(this).data('id');
+      fetch(`/admin/${userId}`)
+              .then(response => response.json())
+              .then(user => {
+                $('#edit-id').val(user.id);
+                $('#edit-id-display').val(user.id);
+                $('#edit-username').val(user.username);
+                $('#edit-surname').val(user.surname);
+                $('#edit-department').val(user.department);
+                $('#edit-email').val(user.email);
+                $('#edit-password').val('');
+                const rolesSelect = $('#edit-roles');
+                rolesSelect.empty();
+                allRoles.forEach(role => {
+                  const selected = user.roles.some(r => r.id === role.id) ? 'selected' : '';
+                  rolesSelect.append(`<option value="${role.id}" ${selected}>${role.roleName}</option>`);
+                });
+                $('#editModal').modal('show');
+              })
+              .catch(error => console.error('Error loading user:', error));
+    });
+
+    // Обработка редактирования
+    $('#edit-user-form').submit(function (e) {
+      e.preventDefault();
+      const userId = $('#edit-id').val();
+      const userData = {
+        username: $('#edit-username').val(),
+        surname: $('#edit-surname').val(),
+        department: $('#edit-department').val(),
+        email: $('#edit-email').val(),
+        password: $('#edit-password').val(),
+        roleIds: $('#edit-roles').val().map(Number)
+      };
+      fetch(`/admin/${userId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userData)
+      })
+              .then(response => {
+                if (response.ok) {
+                  $('#editModal').modal('hide');
+                  loadUsers();
+                } else {
+                  alert('Ошибка при обновлении пользователя');
+                }
+              })
+              .catch(error => console.error('Error updating user:', error));
+    });
+
+    // Обработка нажатия на "Удалить"
+    $(document).on('click', '.delete-btn', function () {
+      const userId = $(this).data('id');
+      fetch(`/admin/${userId}`)
+              .then(response => response.json())
+              .then(user => {
+                $('#delete-username').text(user.username);
+                $('#delete-surname').text(user.surname);
+                $('#delete-email').text(user.email);
+                $('#confirm-delete').data('id', user.id);
+                $('#deleteModal').modal('show');
+              })
+              .catch(error => console.error('Error loading user:', error));
+    });
+
+    // Обработка удаления
+    $('#confirm-delete').click(function () {
+      const userId = $(this).data('id');
+      fetch(`/admin/${userId}`, {
+        method: 'DELETE'
+      })
+              .then(response => {
+                if (response.ok) {
+                  $('#deleteModal').modal('hide');
+                  loadUsers();
+                } else {
+                  alert('Ошибка при удалении пользователя');
+                }
+              })
+              .catch(error => console.error('Error deleting user:', error));
+    });
+  });
+</script>
+</body>
+</html>
